@@ -63,4 +63,65 @@ module "private_rtb" {
   subnets   = [for subnet in module.subnets.subnets : subnet.id if !subnet.map_public_ip_on_launch]
 }
 
+module "public_sg" {
+  source      = "./modules/sg"
+  vpc_id      = module.hw7_vpc.vpc_id
+  description = "allows public access on ports 22 80 443"
+  sgrp_name   = "public_access_sg"
+
+  ingress_rules = [{
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    },
+    {
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+    {
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  ]
+
+  # egress_rules = []
+
+  sgrp_tag = "http_ssh_sg"
+}
+
+module "private_sg" {
+  source      = "./modules/sg"
+  vpc_id      = module.hw7_vpc.vpc_id
+  description = "allows ssh within vpc cidr"
+  sgrp_name   = "private_access_sg"
+
+  ingress_rules = [
+    {
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      cidr_blocks = ["10.0.0.0/24"]
+    }
+  ]
+
+  # egress_rules = []
+
+  sgrp_tag = "http_ssh_sg"
+}
+
+module "public_ec2" {
+  source          = "./modules/ec2"
+  ami             = null
+  instance_type   = "t2.micro"
+  subnet_ids      = [for subnet in module.subnets.subnets : subnet.id if subnet.map_public_ip_on_launch]
+  ec2_tag         = "public_instance"
+  security_groups = [module.public_sg.security_group_id]
+  key_name        = "id_ed25519"
+}
+
 
