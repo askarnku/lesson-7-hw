@@ -6,10 +6,9 @@ variable "igw_id" {
 
 }
 
-variable "nat_gateway_id" {
+variable "nat_gw_id" {
 
 }
 
-variable "subnets" {
+variable "subnets" {}
 
-}

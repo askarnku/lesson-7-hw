@@ -41,6 +41,26 @@ module "subnets" {
 module "hw7_nat" {
   source = "./modules/nat"
 
-  subnet_id  = module.subnets.public_subnet_id[0]
+  subnet_id  = module.subnets.subnet_ids[0]
   nat_gw_tag = "hw7_nat"
 }
+
+module "public_rtb" {
+  source = "./modules/rtb"
+
+  vpc_id    = module.hw7_vpc.vpc_id
+  igw_id    = module.hw7_vpc.igw_id
+  nat_gw_id = null
+  subnets   = [for subnet in module.subnets.subnets : subnet.id if subnet.map_public_ip_on_launch]
+}
+
+module "private_rtb" {
+  source = "./modules/rtb"
+
+  vpc_id    = module.hw7_vpc.vpc_id
+  igw_id    = null
+  nat_gw_id = module.hw7_nat.nat_gw_id
+  subnets   = [for subnet in module.subnets.subnets : subnet.id if !subnet.map_public_ip_on_launch]
+}
+
+
