@@ -1,19 +1,9 @@
-variable "vpc_id" {
-
-}
-
-variable "subnet_cidr" {
-
-}
-
-variable "map_public_ip_on_launch" {
-
-}
-
-variable "az" {
-
-}
-
-variable "subnet_tag" {
-
+variable "vpc_id" {}
+variable "subnets" {
+  type = list(object({
+    cidr_block    = string
+    az            = string
+    map_public_ip = bool
+    tag           = string
+  }))
 }
