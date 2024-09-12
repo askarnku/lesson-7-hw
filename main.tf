@@ -124,4 +124,58 @@ module "public_ec2" {
   key_name        = "id_ed25519"
 }
 
+module "alb_sg" {
+  source = "./modules/sg"
+
+  vpc_id      = module.hw7_vpc.igw_id
+  description = "HTTP and HTTPS traffic to alb"
+  sgrp_name   = "alb-sg"
+  sgrp_tag    = "alb_sg"
+
+  ingress_rules = [
+    {
+      from_port   = 80
+      to_port     = 80
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+    {
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+  ]
+}
+
+module "alb" {
+  source = "./modules/alb"
+
+  vpc_id          = module.hw7_vpc.vpc_id
+  alb_name        = "alb"
+  security_groups = [module.alb_sg.security_group_id]
+  subnets         = []
+  alb_tag         = "alb"
+
+  # target group
+  tg_name    = "alb-tg"
+  alb_tg_tag = "alb_tg"
+
+  # http_listener
+  http_listener_tag = "http_listener"
+
+  # https listner
+  https_listener_tag = "https_listener"
+}
+
+resource "aws_lb_target_group_attachment" "tg_attachment" {
+  for_each = {
+    for idx, instance_id in module.public_ec2.ec2_ids :
+    idx => instance_id
+  }
+
+  target_group_arn = module.alb.alb_tg_arn
+  target_id        = each.value
+  port             = 80
+}
 
